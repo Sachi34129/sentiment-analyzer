@@ -6,15 +6,18 @@ import plotly.express as px
 from collections import Counter
 import re
 
-# Download required NLTK data
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
-try:
-    nltk.data.find('averaged_perceptron_tagger')
-except LookupError:
-    nltk.download('averaged_perceptron_tagger')
+# Download required NLTK data at startup
+@st.cache_resource  # This decorator ensures the download happens only once
+def download_nltk_data():
+    try:
+        nltk.download('punkt')
+        nltk.download('averaged_perceptron_tagger')
+        nltk.download('tokenizers/punkt/english.pickle')
+    except Exception as e:
+        st.error(f"Error downloading NLTK data: {e}")
+
+# Download data at startup
+download_nltk_data()
 
 def clean_text(text):
     # Remove special characters and digits
@@ -50,27 +53,35 @@ def get_sentiment(text):
     }
 
 def analyze_text_details(text):
-    # Tokenize the text
-    tokens = nltk.word_tokenize(text)
-    
-    # Get part of speech tags
-    pos_tags = nltk.pos_tag(tokens)
-    
-    # Count word types
-    pos_counts = Counter(tag for word, tag in pos_tags)
-    
-    # Count words
-    word_count = len(tokens)
-    
-    # Count sentences
-    sentences = nltk.sent_tokenize(text)
-    sentence_count = len(sentences)
-    
-    return {
-        "word_count": word_count,
-        "sentence_count": sentence_count,
-        "pos_counts": pos_counts
-    }
+    try:
+        # Tokenize the text
+        tokens = nltk.word_tokenize(text)
+        
+        # Get part of speech tags
+        pos_tags = nltk.pos_tag(tokens)
+        
+        # Count word types
+        pos_counts = Counter(tag for word, tag in pos_tags)
+        
+        # Count words
+        word_count = len(tokens)
+        
+        # Count sentences
+        sentences = nltk.sent_tokenize(text)
+        sentence_count = len(sentences)
+        
+        return {
+            "word_count": word_count,
+            "sentence_count": sentence_count,
+            "pos_counts": pos_counts
+        }
+    except Exception as e:
+        st.error(f"Error in text analysis: {e}")
+        return {
+            "word_count": 0,
+            "sentence_count": 0,
+            "pos_counts": Counter()
+        }
 
 def main():
     st.title("Text Sentiment Analyzer")
@@ -117,32 +128,33 @@ def main():
             st.write(f"Word Count: {text_details['word_count']}")
             st.write(f"Sentence Count: {text_details['sentence_count']}")
         
-        # Create a DataFrame for parts of speech
-        pos_df = pd.DataFrame({
-            'Part of Speech': list(text_details['pos_counts'].keys()),
-            'Count': list(text_details['pos_counts'].values())
-        })
-        
-        # Plot parts of speech distribution
-        fig = px.bar(pos_df, 
-                    x='Part of Speech', 
-                    y='Count',
-                    title='Parts of Speech Distribution')
-        st.plotly_chart(fig)
-        
-        # Display explanation of POS tags
-        if st.checkbox("Show POS Tags Explanation"):
-            st.markdown("""
-            **Common POS Tags:**
-            - NN: Noun
-            - VB: Verb
-            - JJ: Adjective
-            - RB: Adverb
-            - DT: Determiner
-            - IN: Preposition
-            - CC: Conjunction
-            - PRP: Personal Pronoun
-            """)
+        if text_details['pos_counts']:
+            # Create a DataFrame for parts of speech
+            pos_df = pd.DataFrame({
+                'Part of Speech': list(text_details['pos_counts'].keys()),
+                'Count': list(text_details['pos_counts'].values())
+            })
+            
+            # Plot parts of speech distribution
+            fig = px.bar(pos_df, 
+                        x='Part of Speech', 
+                        y='Count',
+                        title='Parts of Speech Distribution')
+            st.plotly_chart(fig)
+            
+            # Display explanation of POS tags
+            if st.checkbox("Show POS Tags Explanation"):
+                st.markdown("""
+                **Common POS Tags:**
+                - NN: Noun
+                - VB: Verb
+                - JJ: Adjective
+                - RB: Adverb
+                - DT: Determiner
+                - IN: Preposition
+                - CC: Conjunction
+                - PRP: Personal Pronoun
+                """)
         
         # Add history tracking
         if 'history' not in st.session_state:
