@@ -12,7 +12,6 @@ def download_nltk_data():
     try:
         nltk.download('punkt')
         nltk.download('averaged_perceptron_tagger')
-        nltk.download('tokenizers/punkt/english.pickle')
     except Exception as e:
         st.error(f"Error downloading NLTK data: {e}")
 
@@ -54,25 +53,19 @@ def get_sentiment(text):
 
 def analyze_text_details(text):
     try:
-        # Tokenize the text
-        tokens = nltk.word_tokenize(text)
+        # Split text into words (simpler tokenization)
+        words = text.split()
         
-        # Get part of speech tags
-        pos_tags = nltk.pos_tag(tokens)
+        # Basic sentence splitting on punctuation
+        sentences = [s.strip() for s in re.split('[.!?]+', text) if s.strip()]
         
-        # Count word types
-        pos_counts = Counter(tag for word, tag in pos_tags)
-        
-        # Count words
-        word_count = len(tokens)
-        
-        # Count sentences
-        sentences = nltk.sent_tokenize(text)
-        sentence_count = len(sentences)
+        # Simple POS tagging using TextBlob
+        blob = TextBlob(text)
+        pos_counts = Counter(tag for word, tag in blob.tags)
         
         return {
-            "word_count": word_count,
-            "sentence_count": sentence_count,
+            "word_count": len(words),
+            "sentence_count": len(sentences),
             "pos_counts": pos_counts
         }
     except Exception as e:
