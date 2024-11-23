@@ -10,6 +10,14 @@ import warnings
 # Suppress TextBlob warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
+# Text cleaning function
+def clean_text(text):
+    # Remove special characters and digits
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    # Convert to lowercase
+    text = text.lower()
+    return text
+
 # Download required NLTK data at startup
 @st.cache_resource  # Ensures the download happens only once
 def download_nltk_data():
