@@ -1,20 +1,20 @@
 import streamlit as st
 import nltk
-from textblob import TextBlob, download_corpora
+from textblob import TextBlob
 import pandas as pd
 import plotly.express as px
 from collections import Counter
 import re
 
-# Download required NLTK and TextBlob data at startup
+# Download required NLTK data at startup
 @st.cache_resource  # Ensures the download happens only once
 def download_nltk_data():
     try:
         nltk.download('punkt')  # Tokenization data
         nltk.download('averaged_perceptron_tagger')  # POS tagging data
-        download_corpora()  # Download TextBlob corpora
+        # Remove the TextBlob download_corpora call as it's not needed
     except Exception as e:
-        st.error(f"Error downloading NLTK or TextBlob corpora: {e}")
+        st.error(f"Error downloading NLTK data: {e}")
 
 # Download data at startup
 download_nltk_data()
@@ -59,6 +59,13 @@ def get_sentiment(text):
 # Function to analyze text details
 def analyze_text_details(text):
     try:
+        if not text.strip():  # Check if text is empty or just whitespace
+            return {
+                "word_count": 0,
+                "sentence_count": 0,
+                "pos_counts": Counter()
+            }
+            
         # Split text into words
         words = text.split()
         # Basic sentence splitting on punctuation
@@ -79,7 +86,7 @@ def analyze_text_details(text):
             "pos_counts": Counter()
         }
 
-# Main function to run the Streamlit app
+# Rest of the code remains the same...
 def main():
     st.title("Text Sentiment Analyzer")
 
